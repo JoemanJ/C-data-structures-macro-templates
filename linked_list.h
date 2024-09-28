@@ -1,9 +1,6 @@
-#include "helper_macros.h"
+#ifdef LL_ITEM_TYPE
 
-#ifndef LL_ITEM_TYPE
-    #define LL_ITEM_TYPE int
-    #define AUTO_DEFINED_LL_ITEM_TYPE
-#endif
+#include "helper_macros.h"
 
 //TODO: Add some check here so that a second list of the same type cannot be created.
 // ifndef LIST_$(LL_ITEM_TYPE), something like that... 
@@ -113,11 +110,12 @@ void CAT(LLRemoveHead_,LL_ITEM_TYPE) (LL_TYPE* list);
 */
 void CAT(LLRemoveTail_,LL_ITEM_TYPE) (LL_TYPE* list);
 
+#ifdef LL_FAIL_VALUE
 /*
     Treverses the list in order and returns the first item that makes 
     'search_function(item, search_arg)' return any value different than 0.
     If 'search_function' is a comparator, this can be used to find an item with a given value. 
-    Does nothing if no items in the list match the search.
+    Returns LL_FAIL_VALUE if no items in the list match the search.
 */
 LL_ITEM_TYPE CAT(LLFindBySearch_,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE search_arg, \
                                                int (*search_function) (LL_ITEM_TYPE, LL_ITEM_TYPE));
@@ -125,21 +123,21 @@ LL_ITEM_TYPE CAT(LLFindBySearch_,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE sear
 /*
     Returns the item in the given position in the list. Does not remove the fount item.
     If you want to remove the item, use either the 'LLRemove' or 'LLTake' functions.
-    Returns NULL if 'position' is negative or greater than (list size-1) (list positions are
+    Returns LL_FAIL_VALUE if 'position' is negative or greater than (list size-1) (list positions are
     0-indexed).
 */
 LL_ITEM_TYPE CAT(LLFindByPosition_,LL_ITEM_TYPE) (LL_TYPE* list, int position);
 
 /*
     Returns the item at the start (head) of the list. Does not remove the returned item.
-    Returns NULL if the list is empty.
+    Returns LL_FAIL_VALUE if the list is empty.
     If you want to remove the returned item, use either the 'LLRemoveHead' or 'LLTakeHead' functions.
 */
 LL_ITEM_TYPE CAT(LLGetHead_,LL_ITEM_TYPE) (LL_TYPE* list);
 
 /*
     Returns the item at the end (tail) of the list. Does not remove the returned item.
-    Returns NULL if the list is empty.
+    Returns LL_FAIL_VALUE if the list is empty.
     If you want to remove the returned item, use either the 'LLRemoveTail' or 'LLTakeTail' functions.
     Requires linear list treversal!
 */
@@ -149,29 +147,30 @@ LL_ITEM_TYPE CAT(LLGetTail_,LL_ITEM_TYPE) (LL_TYPE* list);
     Treverses the list in order and removes and returns the first item that makes 
     'search_function(item, search_arg)' return any value different than 0.
     If 'search_function' is a comparator, this can be used to find an item with a given value. 
-    Removes nothing and returns NULL if no items in the list match the search.
+    Removes nothing and returns LL_FAIL_VALUE if no items in the list match the search.
 */
-LL_ITEM_TYPE CAT(LLTakeByValue,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE search_arg, \
+LL_ITEM_TYPE CAT(LLTakeBySearch_,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE search_arg, \
                                               int (*search_function) (LL_ITEM_TYPE, LL_ITEM_TYPE));
 
 /*
     Removes and returns the item in the given position in the list.
-    Removes nothing and returns NULL if 'position' is negative or greater than (list size-1)
+    Removes nothing and returns LL_FAIL_VALUE if 'position' is negative or greater than (list size-1)
     (list positions are 0-indexed).
 */
 LL_ITEM_TYPE CAT(LLTakeByPosition_,LL_ITEM_TYPE) (LL_TYPE* list, int position);
 
 /*
-    Removes and eturns the item at the start (head) of the list.
-    Removes nothing and returns NULL if the list is empty.
+    Removes and returns the item at the start (head) of the list.
+    Removes nothing and returns LL_FAIL_VALUE if the list is empty.
 */
 LL_ITEM_TYPE CAT(LLTakeHead_,LL_ITEM_TYPE) (LL_TYPE* list);
 
 /*
-    Removes and eturns the item at the end (tail) of the list.
-    Removes nothing and returns NULL if the list is empty.
+    Removes and returns the item at the end (tail) of the list.
+    Removes nothing and returns LL_FAIL_VALUE if the list is empty.
 */
 LL_ITEM_TYPE CAT(LLTakeTail_,LL_ITEM_TYPE) (LL_TYPE* list);
+#endif
 
 /*
     Returns the number of items in a list.
@@ -203,7 +202,7 @@ void CAT(LLTreverse_,LL_ITEM_TYPE) (LL_TYPE* list, void (*function) (LL_ITEM_TYP
 */
 void CAT(LLTreverseArg_,LL_ITEM_TYPE) (LL_TYPE* list, void (*function) (LL_ITEM_TYPE, void*), void* arg);
 
-#ifdef AUTO_DEFINED_LL_ITEM_TYPE
-    #undef LL__ITEM_TYPE
-    #undef AUTO_DEFINED_LL_ITEM_TYPE
+#undef LL_STRUCT
+#undef LL_TYPE
+
 #endif

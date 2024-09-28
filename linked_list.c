@@ -1,23 +1,30 @@
+#ifdef LL_ITEM_TYPE
+
 #include "linked_list.h"
 
 #include <stdlib.h>
 
 /*
-    These are used for the implementation only and not the interface.
-    They are "undef'd" at the end of this file.
+These macros are redefined here because they have to be undefined at the end of the header file so
+as to not export them to client files.
 */
+#define LL_STRUCT CAT(list_,LL_ITEM_TYPE)
+#define LL_TYPE CAT(List_,LL_ITEM_TYPE)
 
-struct LL_STRUCT
-{
-    int size;
-    Node* head;
-};
+struct node;
+typedef struct node Node;
 
 typedef struct node
 {
     LL_ITEM_TYPE value;
     Node* next;
 } Node;
+
+struct LL_STRUCT
+{
+    int size;
+    Node* head;
+};
 
 /*
     For calling a LL function for the type at hand.
@@ -67,16 +74,16 @@ LL_TYPE* CAT(LLCreate_,LL_ITEM_TYPE)()
 LL_TYPE* CAT(LLDelete_,LL_ITEM_TYPE) (LL_TYPE* list)
 {
     // List is not empty, so free all nodes
-    if (!(CALL(LLIsEMpty)(list)))
+    if (!(CALL(LLIsEmpty)(list)))
     {
         Node* current = list->head;
-        Node* next = current->next;
+        Node* next;
 
         do
         {
+            next = current->next;
             free(current);
             current = next;
-            next = current->next;
         } while(current != NULL);
     }
 
@@ -94,7 +101,7 @@ void CAT(LLClear_,LL_ITEM_TYPE) (LL_TYPE* list, \
                                  void (*item_delete_function) (LL_ITEM_TYPE))
 {
     // List is not empty, so free all nodes
-    if (!(CALL(LLIsEMpty)(list)))
+    if (!(CALL(LLIsEmpty)(list)))
     {
         Node* current = list->head;
 
@@ -208,7 +215,7 @@ void CAT(LLInsertAtPosition_,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE item, in
 int CAT(LLGetPositionBySearch_,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE search_arg, \
                                               int(*search_function) (LL_ITEM_TYPE, LL_ITEM_TYPE))
 {
-    if (CALL(IsEmpty) (list)) return -1;
+    if (CALL(LLIsEmpty) (list)) return -1;
 
     int current_position = 0;
     Node* current = list->head;
@@ -217,6 +224,7 @@ int CAT(LLGetPositionBySearch_,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE search
     {
         if (search_function(current->value, search_arg)) return current_position;
         current = current->next;
+        current_position++;
     } while(current != NULL);
 
     // Reached end of list.
@@ -232,7 +240,7 @@ int CAT(LLGetPositionBySearch_,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE search
 void CAT(LLRemoveBySearch_,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE search_arg, \
                                          int (*search_function) (LL_ITEM_TYPE, LL_ITEM_TYPE))
 {
-    if (CALL(IsEmpty) (list)) return; // List is empty
+    if (CALL(LLIsEmpty) (list)) return; // List is empty
 
     Node* current = list->head;
     Node* next = current->next;
@@ -281,7 +289,7 @@ void CAT(LLRemoveByPosition_,LL_ITEM_TYPE) (LL_TYPE* list, int position)
     Node* next = current->next;
 
     int i=1;
-    for (i=1; i<list_size; i++)
+    for (i=1; i<position; i++)
     {
         current = next;
         next = current->next;
@@ -326,8 +334,8 @@ void CAT(LLRemoveTail_,LL_ITEM_TYPE) (LL_TYPE* list)
     Node* current = list->head;
     Node* next = current->next;
 
-    int i=1;
-    for (i=1; i<list_size; i++)
+    int i=2;
+    for (i=2; i<list_size; i++)
     {
         current = next;
         next = current->next;
@@ -338,11 +346,12 @@ void CAT(LLRemoveTail_,LL_ITEM_TYPE) (LL_TYPE* list)
     list->size--;
 }
 
+#ifdef LL_FAIL_VALUE
 /*
     Theverses the list in order and returns the first item that makes 
     'search_function(item, search_arg)' return any value different than 0.
     If 'search_function' is a comparator, this can be used to find an item with a given value. 
-    Does nothing if no items in the list match the search.
+    Returns LL_FAIL_VALUE if no items in the list match the search.
 */
 LL_ITEM_TYPE CAT(LLFindBySearch_,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE search_arg, \
                                                int (*search_function) (LL_ITEM_TYPE, LL_ITEM_TYPE))
@@ -351,22 +360,23 @@ LL_ITEM_TYPE CAT(LLFindBySearch_,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE sear
     while (current != NULL)
     {
         if (search_function(current->value, search_arg)) return current->value;
+        current = current->next;
     }
 
     // No matching items found
-    return NULL;
+    return (LL_ITEM_TYPE) LL_FAIL_VALUE;
 }
 
 /*
     Returns the item in the given position in the list. Does not remove the fount item.
     If you want to remove the item, use either the 'LLRemove' or 'LLTake' functions.
-    Returns NULL if 'position' is negative or greater than (list size-1) (list positions are
+    Returns LL_FAIL_VALUE if 'position' is negative or greater than (list size-1) (list positions are
     0-indexed).
 */
 LL_ITEM_TYPE CAT(LLFindByPosition_,LL_ITEM_TYPE) (LL_TYPE* list, int position)
 {
     int list_size = CALL(LLSize)(list);
-    if (position < 0 || position >= list_size+1) return NULL;
+    if (position < 0 || position > list_size-1) return (LL_ITEM_TYPE) LL_FAIL_VALUE;
 
     Node* current = list->head;
     int i=0;
@@ -377,10 +387,11 @@ LL_ITEM_TYPE CAT(LLFindByPosition_,LL_ITEM_TYPE) (LL_TYPE* list, int position)
 
     return current->value;
 }
+#endif
 
 /*
     Returns the item at the start (head) of the list. Does not remove the returned item.
-    Returns NULL if the list is empty.
+    Returns LL_FAIL_VALUE if the list is empty.
     If you want to remove the returned item, use either the 'LLRemoveHead' or 'LLTakeHead' functions.
 */
 LL_ITEM_TYPE CAT(LLGetHead_,LL_ITEM_TYPE) (LL_TYPE* list)
@@ -390,13 +401,13 @@ LL_ITEM_TYPE CAT(LLGetHead_,LL_ITEM_TYPE) (LL_TYPE* list)
 
 /*
     Returns the item at the end (tail) of the list. Does not remove the returned item.
-    Returns NULL if the list is empty.
+    Returns LL_FAIL_VALUE if the list is empty.
     If you want to remove the returned item, use either the 'LLRemoveTail' or 'LLTakeTail' functions.
     Requires linear list treversal!
 */
 LL_ITEM_TYPE CAT(LLGetTail_,LL_ITEM_TYPE) (LL_TYPE* list)
 {
-    int list_size = CALL(LLSiza)(list);
+    int list_size = CALL(LLSize)(list);
     Node* current = list->head;
 
     int i=0;
@@ -408,16 +419,17 @@ LL_ITEM_TYPE CAT(LLGetTail_,LL_ITEM_TYPE) (LL_TYPE* list)
     return current->value;
 }
 
+#ifdef LL_FAIL_VALUE
 /*
     Treverses the list in order and removes and returns the first item that makes 
     'search_function(item, search_arg)' return any value different than 0.
     If 'search_function' is a comparator, this can be used to find an item with a given value. 
-    Removes nothing and returns NULL if no items in the list match the search.
+    Removes nothing and returns LL_FAIL_VALUE if no items in the list match the search.
 */
-LL_ITEM_TYPE CAT(LLTakeByValue,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE search_arg, \
+LL_ITEM_TYPE CAT(LLTakeBySearch_,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE search_arg, \
                                               int (*search_function) (LL_ITEM_TYPE, LL_ITEM_TYPE))
 {
-    if (CALL(IsEmpty) (list)) return; // List is empty
+    if (CALL(LLIsEmpty) (list)) return (LL_ITEM_TYPE) LL_FAIL_VALUE; // List is empty
 
     Node* current = list->head;
     Node* next = current->next;
@@ -443,21 +455,23 @@ LL_ITEM_TYPE CAT(LLTakeByValue,LL_ITEM_TYPE) (LL_TYPE* list, LL_ITEM_TYPE search
             list->size--;
             return return_value;
         }
+        current = next;
+        next = current->next;
     }
 
     // Reached end of list.
-    return NULL;
+    return (LL_ITEM_TYPE) LL_FAIL_VALUE;
 }
 
 /*
     Removes and returns the item in the given position in the list.
-    Removes nothing and returns NULL if 'position' is negative or greater than (list size-1)
+    Removes nothing and returns LL_FAIL_VALUE if 'position' is negative or greater than (list size-1)
     (list positions are 0-indexed).
 */
 LL_ITEM_TYPE CAT(LLTakeByPosition_,LL_ITEM_TYPE) (LL_TYPE* list, int position)
 {
     int list_size = CALL(LLSize)(list);
-    if ((position < 0) || (position > list_size-1)) return;
+    if ((position < 0) || (position > list_size-1)) (LL_ITEM_TYPE) LL_FAIL_VALUE;
 
     if(position == 0) return CALL(LLTakeHead)(list);
 
@@ -477,10 +491,11 @@ LL_ITEM_TYPE CAT(LLTakeByPosition_,LL_ITEM_TYPE) (LL_TYPE* list, int position)
     list->size--;
     return return_value;
 }
+#endif
 
 /*
-    Removes and eturns the item at the start (head) of the list.
-    Removes nothing and returns NULL if the list is empty.
+    Removes and returns the item at the start (head) of the list.
+    Removes nothing and returns LL_FAIL_VALUE if the list is empty.
 */
 LL_ITEM_TYPE CAT(LLTakeHead_,LL_ITEM_TYPE) (LL_TYPE* list)
 {
@@ -489,13 +504,14 @@ LL_ITEM_TYPE CAT(LLTakeHead_,LL_ITEM_TYPE) (LL_TYPE* list)
     return return_value;
 }
 
+#ifdef LL_FAIL_VALUE
 /*
-    Removes and eturns the item at the end (tail) of the list.
-    Removes nothing and returns NULL if the list is empty.
+    Removes and returns the item at the end (tail) of the list.
+    Removes nothing and returns LL_FAIL_VALUE if the list is empty.
 */
 LL_ITEM_TYPE CAT(LLTakeTail_,LL_ITEM_TYPE) (LL_TYPE* list)
 {
-    if (CALL(LLIsEmpty)(list)) return;
+    if (CALL(LLIsEmpty)(list)) return (LL_ITEM_TYPE) LL_FAIL_VALUE;
 
     int list_size = CALL(LLSize)(list);
 
@@ -504,8 +520,8 @@ LL_ITEM_TYPE CAT(LLTakeTail_,LL_ITEM_TYPE) (LL_TYPE* list)
     Node* current = list->head;
     Node* next = current->next;
 
-    int i=1;
-    for (i=1; i<list_size; i++)
+    int i=2;
+    for (i=2; i<list_size; i++)
     {
         current = next;
         next = current->next;
@@ -517,6 +533,7 @@ LL_ITEM_TYPE CAT(LLTakeTail_,LL_ITEM_TYPE) (LL_TYPE* list)
     list->size--;
     return return_value;
 }
+#endif
 
 /*
     Returns the number of items in a list.
@@ -571,3 +588,8 @@ void CAT(LLTreverseArg_,LL_ITEM_TYPE) (LL_TYPE* list, void (*function) (LL_ITEM_
         current = current->next;
     }
 }
+
+#undef LL_STRUCT
+#undef LL_TYPE
+
+#endif
